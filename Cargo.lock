@@ -1425,6 +1425,7 @@ dependencies = [
  "eframe",
  "egui_extras",
  "env_logger",
+ "rand",
 ]
 
 [[package]]
