@@ -7,11 +7,11 @@ use gkey_rs::app::App;
 fn main() -> eframe::Result {
     env_logger::init(); // Log to stderr (if you run with `RUST_LOG=debug`).
     let options = eframe::NativeOptions {
-        viewport: egui::ViewportBuilder::default().with_inner_size([320.0, 240.0]),
+        viewport: egui::ViewportBuilder::default().with_inner_size([380.0, 140.0]),
         ..Default::default()
     };
     eframe::run_native(
-        "Confirm exit",
+        "密码生成器",
         options,
         Box::new(|cc| Ok(Box::new(App::new(cc)))),
     )

@@ -3,7 +3,7 @@ use rand::rngs::OsRng;
 use rand::distributions::Uniform;
 
 /// Defines the type of characters to include in the generated password.
-#[derive(PartialEq)]
+#[derive(PartialEq,Clone)]
 pub enum PasswordType {
     Alphanumeric,   // Only letters and digits
     Alphabetic,     // Only letters
@@ -11,6 +11,7 @@ pub enum PasswordType {
     SpecialChars,   // Only special characters
     All,            // All characters
 }
+#[allow(non_upper_case_globals)]
 pub const AlPHANUMERIC: &str = r#"大写字母、小写字母、数字"#;
 pub const AIPHABETIC: &str = r#"大写字母、小写字母"#;
 pub const NUMERIC: &str = r#"数字"#;
