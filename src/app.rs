@@ -15,6 +15,9 @@ pub struct App{
     key_len: usize,
     key_name: String,
     key: String,
+    key_remark: String,
+    
+    //用来存储保存的数据
     key_info: Vec<KeyInfo>
 }
 
@@ -28,6 +31,7 @@ impl App {
             key_len: 12usize,
             key_name: String::new(),
             key: String::new(),
+            key_remark: String::new(),
             key_info: Vec::<KeyInfo>::new()
          }
     }
@@ -81,10 +85,18 @@ impl App {
     }
     pub fn key_generation(&mut self, ui: &mut Ui){
         ui.horizontal(|ui|{
+            ui.add(Label::new(RichText::new("账户:").size(18.0).color(Color32::BLUE)));
+            ui.add(TextEdit::singleline(&mut self.key_name).font(FontId::new(18.0,  FontFamily::Name("Song".into()))));
+        });
+        ui.horizontal(|ui|{
             ui.add(Label::new(RichText::new("密码:").size(18.0).color(Color32::BLUE)));
             ui.add(Label::new(RichText::new(&self.key).size(18.0)).extend());
         });
-        ui.centered_and_justified(|ui| {
+        ui.horizontal(|ui|{
+            ui.add(Label::new(RichText::new("备注:").size(18.0).color(Color32::BLUE)));
+            ui.add(TextEdit::singleline(&mut self.key_remark).font(FontId::new(18.0,  FontFamily::Name("Song".into()))));
+        });
+        ui.horizontal_centered(|ui| {
             ui.image(include_image!("./picture/rust_zh.png"));
         });
     }
@@ -107,7 +119,10 @@ fn setup_custom_fonts(ctx: &egui::Context) {
         "Song".to_owned(),
         egui::FontData::from_static(include_bytes!("./font/STSong.ttf")),
     );
-
+    fonts.families.insert(
+        FontFamily::Name("Song".into()),
+        vec!["Song".to_owned()],
+    );
     // Put my font first (highest priority) for proportional text:
     fonts
         .families
