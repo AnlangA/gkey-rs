@@ -1,11 +1,10 @@
 ///! #处理app界面传递过来的数据。用于保存密码等信息
 use tokio::{
-    io::AsyncWriteExt, 
-    sync::mpsc, 
-    BufWriter};
-use tokio::fs::OpenOptions;
+    io::BufWriter, 
+    sync::mpsc};
 use crate::app::KeyInfo;
-
+use tokio::fs::OpenOptions;
+use tokio::io::;
 
 pub async fn receive_app_data(mut rx: mpsc::Receiver<KeyInfo>) {
     let file = match OpenOptions::new()
