@@ -3,20 +3,28 @@ use egui::*;
 use crate::selection::rand;
 use egui_extras::*;
 
+#[derive(Debug)]
 pub struct KeyInfo{
     key_name: String,
     key: String,
     key_remark: String
 }
 
+impl Default for KeyInfo {
+    fn default() -> Self {
+        KeyInfo {
+            key_name: String::from(""),
+            key: String::from(""),
+            key_remark: String::from(""),
+        }
+    }
+}
+
 pub struct App{
     key_type: rand::PasswordType,
     key_type_name :String,
     key_len: usize,
-    key_name: String,
-    key: String,
-    key_remark: String,
-    
+    key: KeyInfo,
     //用来存储保存的数据
     key_info: Vec<KeyInfo>
 }
@@ -29,9 +37,7 @@ impl App {
             key_type: rand::PasswordType::All,
             key_type_name: String::from(rand::ALL),
             key_len: 12usize,
-            key_name: String::new(),
-            key: String::new(),
-            key_remark: String::new(),
+            key: KeyInfo::default(),
             key_info: Vec::<KeyInfo>::new()
          }
     }
@@ -79,22 +85,22 @@ impl App {
                 self.key_len -= 1;
             }
             if ui.button(RichText::new("生成密码").color(Color32::RED)).clicked() {
-                self.key = rand::generate_random_password(self.key_len, self.key_type.clone());
+                self.key.key = rand::generate_random_password(self.key_len, self.key_type.clone());
             }
         });
     }
     pub fn key_generation(&mut self, ui: &mut Ui){
         ui.horizontal(|ui|{
             ui.add(Label::new(RichText::new("账户:").size(18.0).color(Color32::BLUE)));
-            ui.add(TextEdit::singleline(&mut self.key_name).font(FontId::new(18.0,  FontFamily::Name("Song".into()))));
+            ui.add(TextEdit::singleline(&mut self.key.key_name).font(FontId::new(18.0,  FontFamily::Name("Song".into()))));
         });
         ui.horizontal(|ui|{
             ui.add(Label::new(RichText::new("密码:").size(18.0).color(Color32::BLUE)));
-            ui.add(Label::new(RichText::new(&self.key).size(18.0)).extend());
+            ui.add(Label::new(RichText::new(&self.key.key).size(18.0)).extend());
         });
         ui.horizontal(|ui|{
             ui.add(Label::new(RichText::new("备注:").size(18.0).color(Color32::BLUE)));
-            ui.add(TextEdit::singleline(&mut self.key_remark).font(FontId::new(18.0,  FontFamily::Name("Song".into()))));
+            ui.add(TextEdit::singleline(&mut self.key.key_remark).font(FontId::new(18.0,  FontFamily::Name("Song".into()))));
         });
         ui.horizontal_centered(|ui| {
             ui.image(include_image!("./picture/rust_zh.png"));
