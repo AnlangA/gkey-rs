@@ -13,7 +13,17 @@ pub struct KeyInfo{
     key: String,
     key_remark: String
 }
-
+impl KeyInfo {
+    pub fn get_key_name(&self)->String{
+        self.key_name.clone()
+    }
+    pub fn get_key(&self)->String{
+        self.key.clone()
+    }
+    pub fn get_key_remark(&self)->String{
+        self.key_remark.clone()
+    }
+}
 impl Default for KeyInfo {
     fn default() -> Self {
         KeyInfo {
