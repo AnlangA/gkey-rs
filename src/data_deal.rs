@@ -1,6 +1,6 @@
 ///! #处理app界面传递过来的数据。用于保存密码等信息
 use tokio::{
-    io::BufWriter, 
+    io::{BufWriter,AsyncWriteExt}, 
     sync::mpsc};
 use crate::app::KeyInfo;
 use tokio::fs::OpenOptions;
