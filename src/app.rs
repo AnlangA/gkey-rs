@@ -2,8 +2,12 @@ use eframe::egui::{self, Color32, Label, RichText};
 use egui::*;
 use crate::selection::rand;
 use egui_extras::*;
+use std::sync::Arc;
+use parking_lot::Mutex;
+use tokio::sync::mpsc;
+use serde::{Serialize, Deserialize};
 
-#[derive(Debug)]
+#[derive(Debug,Clone,Serialize, Deserialize)]
 pub struct KeyInfo{
     key_name: String,
     key: String,
@@ -25,12 +29,14 @@ pub struct App{
     key_type_name :String,
     key_len: usize,
     key: KeyInfo,
+    tokio_rt: tokio::runtime::Runtime,
+    tokio_tx: Arc<Mutex<mpsc::Sender<KeyInfo>>>,
     //用来存储保存的数据
     key_info: Vec<KeyInfo>
 }
 
 impl App {
-    pub fn new(cc: &eframe::CreationContext<'_>)->Self{
+    pub fn new(cc: &eframe::CreationContext<'_>, rt: tokio::runtime::Runtime, tx: Arc<Mutex<mpsc::Sender<KeyInfo>>>)->Self{
         setup_custom_fonts(&cc.egui_ctx);
         install_image_loaders(&cc.egui_ctx);
         App { 
@@ -38,7 +44,9 @@ impl App {
             key_type_name: String::from(rand::ALL),
             key_len: 12usize,
             key: KeyInfo::default(),
-            key_info: Vec::<KeyInfo>::new()
+            tokio_rt: rt,
+            tokio_tx: tx,
+            key_info: Vec::<KeyInfo>::new(),
          }
     }
     pub fn get_key_type_name(&mut self) ->&str{
@@ -86,6 +94,16 @@ impl App {
             }
             if ui.button(RichText::new("生成密码").color(Color32::RED)).clicked() {
                 self.key.key = rand::generate_random_password(self.key_len, self.key_type.clone());
+            }
+            let key = self.key.clone();
+            let tx = self.tokio_tx.lock().clone();
+            if ui.button(RichText::new("保存密码").color(Color32::BROWN)).clicked() {
+                    // 在Tokio运行时中发送消息
+                    self.tokio_rt.spawn(async move {
+                        if let Err(e) = tx.send(key).await {
+                            eprintln!("发送错误: {}", e);
+                        }
+                    });
             }
         });
     }
