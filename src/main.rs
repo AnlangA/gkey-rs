@@ -24,7 +24,7 @@ fn main() -> eframe::Result {
         data_deal::key_info_deal(en_rx,disen_tx).await;
     });
     let options = eframe::NativeOptions {
-        viewport: egui::ViewportBuilder::default().with_inner_size([450.0, 230.0]),
+        viewport: egui::ViewportBuilder::default().with_inner_size([600.0, 230.0]),
         ..Default::default()
     };
     eframe::run_native(

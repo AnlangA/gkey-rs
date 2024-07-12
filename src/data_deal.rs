@@ -69,8 +69,10 @@ pub async fn receive_app_data(mut rx: mpsc::Receiver<KeyInfo>) {
 
 pub async fn key_info_deal(mut rx: mpsc::Receiver<KeyRingEn>, mut tx: mpsc::Sender<KeyRingDis>){
     while let Some(meg) = rx.recv().await{
+        
         match meg {
-            KeyRingEn::Encryption(_) =>{
+            KeyRingEn::Encryption(msg) =>{
+                println!("{}", msg);
                 let file = match fs::read_to_string("key_info.toml").await{
                     Ok(file) => file,
                     Err(_) => {
@@ -90,8 +92,13 @@ pub async fn key_info_deal(mut rx: mpsc::Receiver<KeyRingEn>, mut tx: mpsc::Send
                 let mut sealing_key = SealingKey::new(unbound_key, nonce_sequence);
                 let associated_data = Aad::from(b"additional public data");
                 let tag = sealing_key.seal_in_place_separate_tag(associated_data, &mut data).expect("tag生成失败");
-                let mut cypher_text_with_tag = [&data, tag.as_ref()].concat();
-                println!("{:?}",cypher_text_with_tag);
+                let cypher_text_with_tag = [&data, tag.as_ref()].concat();
+                let en_string = cypher_text_with_tag.iter()
+                                    .map(|&num| num.to_string())
+                                    .collect::<Vec<String>>()
+                                    .join("");
+                let _ = tx.send(KeyRingDis::EncryptionRep(en_string)).await;
+                let _ = fs::write("key_info_en.txt", data).await;
 
             }
             KeyRingEn::Disencryption(_) =>{

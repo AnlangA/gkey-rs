@@ -40,6 +40,8 @@ pub struct App{
     key_type_name :String,
     key_len: usize,
     key: KeyInfo,
+    dis_key: String,
+    dis_info: String,
     tokio_rt: tokio::runtime::Runtime,
     tokio_tx: mpsc::Sender<KeyInfo>,
     tokio_en_tx: mpsc::Sender<KeyRingEn>,
@@ -55,6 +57,8 @@ impl App {
             key_type: rand::PasswordType::All,
             key_type_name: String::from(rand::ALL),
             key_len: 12usize,
+            dis_key: String::new(),
+            dis_info: String::new(),
             key: KeyInfo::default(),
             tokio_rt: rt,
             tokio_tx: tx,
@@ -146,12 +150,42 @@ impl App {
             ui.image(include_image!("./picture/rust_zh.png"));
         });
     }
+    pub fn en_windows(&mut self, ctx: &egui::Context){
+        if let Ok(meg)  = self.tokio_disen_rx.try_recv(){
+            match meg {
+                KeyRingDis::EncryptionRep(key) =>{
+                    self.dis_key = key;
+                }
+                KeyRingDis::DisencryptionRep(info) =>{
+                    self.dis_info = info;
+                }
+            }
+        }
+        if !self.dis_key.is_empty(){
+            //let pos = egui::pos2(200.0, 40.0);
+            egui::Window::new("解密密匙")
+            //.default_pos(pos)
+            .show(ctx, |ui| {
+                ui.add(Label::new(RichText::new(self.dis_key.clone()).color(Color32::BLUE).size(18.0)));
+            });
+        }
+        if !self.dis_info.is_empty(){
+            //let pos = egui::pos2(200.0, 40.0);
+            egui::Window::new("解密信息")
+            //.default_pos(pos)
+            .show(ctx, |ui| {
+                ui.add(Label::new(RichText::new(self.dis_info.clone()).color(Color32::BLUE).size(18.0)));
+            });
+        }
+        
+    }
 }
 impl eframe::App for App {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         egui::CentralPanel::default().show(ctx, |ui| {
             self.key_type_selection(ui);
             self.key_generation(ui);
+            self.en_windows(ctx);
         });
     }
 }
