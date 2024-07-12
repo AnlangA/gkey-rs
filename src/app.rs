@@ -1,6 +1,7 @@
 use eframe::egui::{self, Color32, Label, RichText};
 use egui::*;
 use crate::selection::rand;
+use crate::data_deal::*;
 use egui_extras::*;
 use std::sync::Arc;
 use parking_lot::Mutex;
@@ -40,13 +41,14 @@ pub struct App{
     key_len: usize,
     key: KeyInfo,
     tokio_rt: tokio::runtime::Runtime,
-    tokio_tx: Arc<Mutex<mpsc::Sender<KeyInfo>>>,
-    //用来存储保存的数据
-    key_info: Vec<KeyInfo>
+    tokio_tx: mpsc::Sender<KeyInfo>,
+    tokio_en_tx: mpsc::Sender<KeyRingEn>,
+    tokio_disen_rx: mpsc::Receiver<KeyRingDis>,
 }
 
 impl App {
-    pub fn new(cc: &eframe::CreationContext<'_>, rt: tokio::runtime::Runtime, tx: Arc<Mutex<mpsc::Sender<KeyInfo>>>)->Self{
+    pub fn new(cc: &eframe::CreationContext<'_>, rt: tokio::runtime::Runtime, tx: mpsc::Sender<KeyInfo>,
+                en_tx: mpsc::Sender<KeyRingEn>, disen_rx: mpsc::Receiver<KeyRingDis>)->Self{
         setup_custom_fonts(&cc.egui_ctx);
         install_image_loaders(&cc.egui_ctx);
         App { 
@@ -56,7 +58,8 @@ impl App {
             key: KeyInfo::default(),
             tokio_rt: rt,
             tokio_tx: tx,
-            key_info: Vec::<KeyInfo>::new(),
+            tokio_en_tx: en_tx,
+            tokio_disen_rx: disen_rx,
          }
     }
     pub fn get_key_type_name(&mut self) ->&str{
@@ -92,6 +95,15 @@ impl App {
                             ui.selectable_value(&mut self.key_type, rand::PasswordType::SpecialChars, rand::SPECIALCHARS);
                             ui.selectable_value(&mut self.key_type, rand::PasswordType::All, rand::ALL);
                         });
+            if ui.add(Button::new(RichText::new("加密").color(Color32::RED))).clicked(){
+                // 在Tokio运行时中发送消息
+                let tx = self.tokio_en_tx.clone();
+                self.tokio_rt.spawn(async move {
+                    if let Err(e) = tx.send(KeyRingEn::Encryption(String::from("加密"))).await {
+                        eprintln!("发送错误: {}", e);
+                    }
+                });
+            }
         });
         ui.horizontal(|ui|{
             ui.add(Label::new(RichText::new("密码长度:").color(Color32::BLUE)));
@@ -106,7 +118,7 @@ impl App {
                 self.key.key = rand::generate_random_password(self.key_len, self.key_type.clone());
             }
             let key = self.key.clone();
-            let tx = self.tokio_tx.lock().clone();
+            let tx = self.tokio_tx.clone();
             if ui.button(RichText::new("保存密码").color(Color32::BROWN)).clicked() {
                     // 在Tokio运行时中发送消息
                     self.tokio_rt.spawn(async move {
