@@ -73,7 +73,7 @@ pub async fn key_info_deal(mut rx: mpsc::Receiver<KeyRingEn>, mut tx: mpsc::Send
         match meg {
             KeyRingEn::Encryption(msg) =>{
                 println!("{}", msg);
-                let file = match fs::read_to_string("key_info.toml").await{
+                let file = match fs::read("key_info.toml").await{
                     Ok(file) => file,
                     Err(_) => {
                         let _ = tx.send(KeyRingDis::EncryptionRep(String::from("找不到文件"))).await;
@@ -81,28 +81,46 @@ pub async fn key_info_deal(mut rx: mpsc::Receiver<KeyRingEn>, mut tx: mpsc::Send
                     }
                 };
                 //对文件进行加密
-                let mut data = file.as_bytes().to_vec();
+                let mut data = file;
                 let rand = SystemRandom::new();
                 // Generate a new symmetric encryption key
                 let mut key_bytes = vec![0; AES_256_GCM.key_len()];
                 rand.fill(&mut key_bytes).expect("随机数生成失败");
-                println!("key_bytes = {}", hex::encode(&key_bytes));
+                println!("key_bytes = {:?}", key_bytes);
                 let unbound_key = UnboundKey::new(&AES_256_GCM, &key_bytes).expect("unbound_key生成失败");
                 let nonce_sequence = CounterNonceSequence(1);
                 let mut sealing_key = SealingKey::new(unbound_key, nonce_sequence);
                 let associated_data = Aad::from(b"additional public data");
                 let tag = sealing_key.seal_in_place_separate_tag(associated_data, &mut data).expect("tag生成失败");
                 let cypher_text_with_tag = [&data, tag.as_ref()].concat();
-                let en_string = cypher_text_with_tag.iter()
+                println!("{:?}", cypher_text_with_tag);
+                let en_string = key_bytes.iter()
                                     .map(|&num| num.to_string())
                                     .collect::<Vec<String>>()
-                                    .join("");
+                                    .join("-");
+                println!("{}", en_string);
                 let _ = tx.send(KeyRingDis::EncryptionRep(en_string)).await;
-                let _ = fs::write("key_info_en.txt", data).await;
+                let _ = fs::write("key_info_en.txt", cypher_text_with_tag).await;
 
             }
-            KeyRingEn::Disencryption(_) =>{
-
+            KeyRingEn::Disencryption(key) =>{
+                let mut file = match fs::read("key_info_en.txt").await{
+                    Ok(file) => file,
+                    Err(_) => {
+                        let _ = tx.send(KeyRingDis::DisencryptionRep(String::from("找不到文件"))).await;
+                        continue;
+                    }
+                };
+                let dis_key = key.split("-").filter_map(|c| c.parse::<u8>().ok())
+                                    .map(|d| d as u8)
+                                    .collect::<Vec<u8>>();
+                println!("diskey: {:?}", dis_key);
+                let unbound_key = UnboundKey::new(&AES_256_GCM, &dis_key).expect("生成密匙失败");
+                let nonce_sequence = CounterNonceSequence(1);
+                let mut opening_key = OpeningKey::new(unbound_key, nonce_sequence);
+                let associated_data = Aad::from(b"additional public data");
+                let decrypted_data = opening_key.open_in_place( associated_data, &mut file).expect("解密失败");
+                let _ = fs::write("./dis_key.toml", decrypted_data).await;
             }
         }
     }

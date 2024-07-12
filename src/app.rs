@@ -42,6 +42,7 @@ pub struct App{
     key: KeyInfo,
     dis_key: String,
     dis_info: String,
+    dis_flag: bool,
     tokio_rt: tokio::runtime::Runtime,
     tokio_tx: mpsc::Sender<KeyInfo>,
     tokio_en_tx: mpsc::Sender<KeyRingEn>,
@@ -59,6 +60,7 @@ impl App {
             key_len: 12usize,
             dis_key: String::new(),
             dis_info: String::new(),
+            dis_flag: false,
             key: KeyInfo::default(),
             tokio_rt: rt,
             tokio_tx: tx,
@@ -108,6 +110,9 @@ impl App {
                     }
                 });
             }
+            if ui.add(Button::new(RichText::new("解密").color(Color32::RED))).clicked(){
+                self.dis_flag = !self.dis_flag;
+            }
         });
         ui.horizontal(|ui|{
             ui.add(Label::new(RichText::new("密码长度:").color(Color32::BLUE)));
@@ -123,7 +128,7 @@ impl App {
             }
             let key = self.key.clone();
             let tx = self.tokio_tx.clone();
-            if ui.button(RichText::new("保存密码").color(Color32::BROWN)).clicked() {
+            if ui.button(RichText::new("保存数据").color(Color32::BROWN)).clicked() {
                     // 在Tokio运行时中发送消息
                     self.tokio_rt.spawn(async move {
                         if let Err(e) = tx.send(key).await {
@@ -161,23 +166,47 @@ impl App {
                 }
             }
         }
-        if !self.dis_key.is_empty(){
-            //let pos = egui::pos2(200.0, 40.0);
+        if !self.dis_key.is_empty() & !self.dis_flag{
+            //let pos = egui::pos2(100.0, 100\\.0);
             egui::Window::new("解密密匙")
-            //.default_pos(pos)
+            .default_open(false)
+            .auto_sized()
+            //.current_pos(pos)
             .show(ctx, |ui| {
                 ui.add(Label::new(RichText::new(self.dis_key.clone()).color(Color32::BLUE).size(18.0)));
             });
         }
-        if !self.dis_info.is_empty(){
+        if !self.dis_info.is_empty() & self.dis_flag{
             //let pos = egui::pos2(200.0, 40.0);
             egui::Window::new("解密信息")
+            .auto_sized()
             //.default_pos(pos)
             .show(ctx, |ui| {
                 ui.add(Label::new(RichText::new(self.dis_info.clone()).color(Color32::BLUE).size(18.0)));
             });
         }
         
+    }
+    pub fn dis_windows(&mut self, ctx: &egui::Context){
+        if self.dis_flag{
+            //let pos = egui::pos2(100.0, 100.0);
+            egui::Window::new(RichText::new("输入密匙解密").color(Color32::RED))
+            //.max_size(egui::pos2([100.0,500.0]))
+            //.default_pos(pos)
+            .show(ctx, |ui| {
+                ui.add(egui::TextEdit::multiline(&mut self.dis_key).font(FontId::new(18.0,  FontFamily::Name("Song".into()))));
+                if ui.add(Button::new(RichText::new("开始解密").color(Color32::BLUE).size(18.0))).clicked(){
+                    // 在Tokio运行时中发送消息
+                    let tx = self.tokio_en_tx.clone();
+                    let key = KeyRingEn::Disencryption(self.dis_key.clone());
+                    self.tokio_rt.spawn(async move {
+                        if let Err(e) = tx.send(key).await {
+                            eprintln!("发送错误: {}", e);
+                        }
+                    });
+                }
+            });
+        }
     }
 }
 impl eframe::App for App {
@@ -186,6 +215,7 @@ impl eframe::App for App {
             self.key_type_selection(ui);
             self.key_generation(ui);
             self.en_windows(ctx);
+            self.dis_windows(ctx);
         });
     }
 }

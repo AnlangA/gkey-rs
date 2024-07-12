@@ -3,9 +3,6 @@
 
 use eframe::egui;
 use tokio::sync::mpsc;
-use std::sync::Arc;
-use parking_lot::Mutex;
-
 use gkey_rs::app::App;
 use gkey_rs::data_deal;
 
@@ -28,7 +25,7 @@ fn main() -> eframe::Result {
         ..Default::default()
     };
     eframe::run_native(
-        "密码生成器",
+        "密码生成、加密器",
         options,
         Box::new(|cc| Ok(Box::new(App::new(cc, rt, tx, en_tx, disen_rx)))),
     )
