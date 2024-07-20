@@ -99,7 +99,8 @@ pub async fn key_info_deal(mut rx: mpsc::Receiver<KeyRingEn>, mut tx: mpsc::Send
                                     .collect::<Vec<String>>()
                                     .join("-");
                 println!("{}", en_string);
-                let _ = tx.send(KeyRingDis::EncryptionRep(en_string)).await;
+                let _ = tx.send(KeyRingDis::EncryptionRep(en_string.clone())).await;
+                let _ = fs::write("key.txt", en_string.as_bytes()).await;
                 let _ = fs::write("key_info_en.txt", cypher_text_with_tag).await;
 
             }
