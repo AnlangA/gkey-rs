@@ -72,7 +72,7 @@ pub async fn key_info_deal(mut rx: mpsc::Receiver<KeyRingEn>, mut tx: mpsc::Send
         
         match meg {
             KeyRingEn::Encryption(msg) =>{
-                println!("{}", msg);
+                //println!("{}", msg);
                 let file = match fs::read("key_info.toml").await{
                     Ok(file) => file,
                     Err(_) => {
@@ -86,19 +86,19 @@ pub async fn key_info_deal(mut rx: mpsc::Receiver<KeyRingEn>, mut tx: mpsc::Send
                 // Generate a new symmetric encryption key
                 let mut key_bytes = vec![0; AES_256_GCM.key_len()];
                 rand.fill(&mut key_bytes).expect("随机数生成失败");
-                println!("key_bytes = {:?}", key_bytes);
+                //println!("key_bytes = {:?}", key_bytes);
                 let unbound_key = UnboundKey::new(&AES_256_GCM, &key_bytes).expect("unbound_key生成失败");
                 let nonce_sequence = CounterNonceSequence(1);
                 let mut sealing_key = SealingKey::new(unbound_key, nonce_sequence);
                 let associated_data = Aad::from(b"additional public data");
                 let tag = sealing_key.seal_in_place_separate_tag(associated_data, &mut data).expect("tag生成失败");
                 let cypher_text_with_tag = [&data, tag.as_ref()].concat();
-                println!("{:?}", cypher_text_with_tag);
+                //println!("{:?}", cypher_text_with_tag);
                 let en_string = key_bytes.iter()
                                     .map(|&num| num.to_string())
                                     .collect::<Vec<String>>()
                                     .join("-");
-                println!("{}", en_string);
+                //println!("{}", en_string);
                 let _ = tx.send(KeyRingDis::EncryptionRep(en_string.clone())).await;
                 let _ = fs::write("key.txt", en_string.as_bytes()).await;
                 let _ = fs::write("key_info_en.txt", cypher_text_with_tag).await;
@@ -115,7 +115,7 @@ pub async fn key_info_deal(mut rx: mpsc::Receiver<KeyRingEn>, mut tx: mpsc::Send
                 let dis_key = key.split("-").filter_map(|c| c.parse::<u8>().ok())
                                     .map(|d| d as u8)
                                     .collect::<Vec<u8>>();
-                println!("diskey: {:?}", dis_key);
+                //println!("diskey: {:?}", dis_key);
                 let unbound_key = UnboundKey::new(&AES_256_GCM, &dis_key).expect("生成密匙失败");
                 let nonce_sequence = CounterNonceSequence(1);
                 let mut opening_key = OpeningKey::new(unbound_key, nonce_sequence);
