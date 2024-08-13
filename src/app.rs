@@ -3,8 +3,6 @@ use egui::*;
 use crate::selection::rand;
 use crate::data_deal::*;
 use egui_extras::*;
-use std::sync::Arc;
-use parking_lot::Mutex;
 use tokio::sync::mpsc;
 use serde::{Serialize, Deserialize};
 

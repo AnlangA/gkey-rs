@@ -67,11 +67,11 @@ pub async fn receive_app_data(mut rx: mpsc::Receiver<KeyInfo>) {
     }
 }
 
-pub async fn key_info_deal(mut rx: mpsc::Receiver<KeyRingEn>, mut tx: mpsc::Sender<KeyRingDis>){
+pub async fn key_info_deal(mut rx: mpsc::Receiver<KeyRingEn>, tx: mpsc::Sender<KeyRingDis>){
     while let Some(meg) = rx.recv().await{
         
         match meg {
-            KeyRingEn::Encryption(msg) =>{
+            KeyRingEn::Encryption(_msg) =>{
                 //println!("{}", msg);
                 let file = match fs::read("key_info.toml").await{
                     Ok(file) => file,
